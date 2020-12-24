@@ -10,7 +10,7 @@
 
 모델에 state dict를 저장하기에는 pickle 파일이 너무 커서 업로드 할 수 없었습니다.
 
-따라서 모델은 없는상태이며 학습을 진행해야 test와 leaderboard test가 가능합니다.
+따라서 모델은 없는 상태이며 학습을 진행해야 test와 leaderboard test가 가능합니다.
 
 만약 train이 종료되고 이어서 test와 leaderboard를 동시에 수행하면 이전 checkpoint의 모델이 아닌 학습이 진행된 모델로부터 예측합니다.
 
