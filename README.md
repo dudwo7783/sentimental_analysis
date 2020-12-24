@@ -78,3 +78,6 @@ https://medium.com/@aniruddha.choudhury94/part-2-bert-fine-tuning-tutorial-with-
 
 를 참고하였습니다.
 
+## 기타
+
+Input으로 Bert WordEmbedding, 분류 모델로 TCN을 이용한 sample 코드를 추가하였습니다.
