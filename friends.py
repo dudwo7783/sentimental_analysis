@@ -1,6 +1,8 @@
 #!pip install transformers
 # !pip install sentencepiece
 
+import argparse
+
 import tensorflow as tf
 import torch
 
@@ -18,6 +20,26 @@ from tqdm.notebook import tqdm
 
 import json
 import re
+
+
+parser = argparse.ArgumentParser(description='Firends')
+
+parser.add_argument('--train', type=str,
+                    help='train yes/no')
+
+parser.add_argument('--test', type=str,
+                    help='testset yes/no')
+
+parser.add_argument('--leaderboard_test', type=str,
+                    help='leaderboard tes yes/no')
+
+args = parser.parse_args()
+
+use_train = args.train
+use_test = args.test
+use_leader_test = args.leaderboard_test
+
+print(f'TRAIN : {use_train} / TEST : {use_test} / LEADERBOARD TEST : {use_leader_test}')
 
 # GPU 디바이스 이름 구함
 device_name = tf.test.gpu_device_name()
@@ -359,6 +381,13 @@ def train():
         print("  Average training loss: {0:.2f}".format(avg_train_loss))
         print("  Training epcoh took: {:}".format(format_time(time.time() - t0)))
 
+        torch.save({
+            'epoch': epoch_i,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss,
+        }, './checkpoint/friends/state_dict_epoch.pickle')
+
         if eval_accuracy / nb_eval_steps >= 0.6:
             break
 
@@ -379,6 +408,11 @@ def test():
 
     test_dataset = FriendsDataset("./data/friends_test.json", 'json_test', concat_size=1)
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+    if use_train == 'no':
+        checkpoint = torch.load('./checkpoint/friends/state_dict_epoch.pickle')
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     model.eval()
     eval_accuracy = 0
@@ -435,8 +469,14 @@ def leaderboard_test():
     test_dataset = FriendsDataset("./data/Friends/en_data.csv", "test", 1)
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
+    if use_train == 'no':
+        checkpoint = torch.load('./checkpoint/friends/state_dict_epoch.pickle')
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
     model.eval()
     pred_y = []
+
     confusion_matrix = torch.zeros(nb_classes, nb_classes)
     with torch.no_grad():
         correct = 0
@@ -463,10 +503,13 @@ def leaderboard_test():
     x_df = pd.DataFrame({'Id': range(0, len(total_pred)), 'Predicted': total_pred})
     x_df['Predicted'] = x_df['Predicted'].apply(lambda x: inttolabel(x))
 
-    x_df.to_csv('./sample123.csv', index=False)
+    x_df.to_csv('./result/friends/sample.csv', index=False)
 
 
 if __name__ == "__main__":
-    # train()
-    # test()
-    leaderboard_test()
+    if use_train == 'yes':
+        train()
+    if use_test == 'yes':
+        test()
+    if use_leader_test == 'yes':
+        leaderboard_test()

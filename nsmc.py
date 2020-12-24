@@ -1,4 +1,5 @@
 #!pip install transformers
+import argparse
 
 import tensorflow as tf
 import torch
@@ -12,6 +13,26 @@ import numpy as np
 import time
 import datetime
 from tqdm.notebook import tqdm
+
+
+parser = argparse.ArgumentParser(description='Firends')
+
+parser.add_argument('--train', type=str,
+                    help='train yes/no')
+
+parser.add_argument('--test', type=str,
+                    help='testset yes/no')
+
+parser.add_argument('--leaderboard_test', type=str,
+                    help='leaderboard tes yes/no')
+
+args = parser.parse_args()
+
+use_train = args.train
+use_test = args.test
+use_leader_test = args.leaderboard_test
+
+print(f'TRAIN : {use_train} / TEST : {use_test} / LEADERBOARD TEST : {use_leader_test}')
 
 # GPU 디바이스 이름 구함
 device_name = tf.test.gpu_device_name()
@@ -222,7 +243,9 @@ def train():
         print("  Average training loss: {0:.2f}".format(avg_train_loss))
         print("  Training epcoh took: {:}".format(format_time(time.time() - t0)))
 
-        if eval_accuracy / nb_eval_steps >= 9.0:
+        torch.save(model.state_dict(), f'./checkpoint/nsmc/state_dict_epoch.pickle')
+
+        if eval_accuracy / nb_eval_steps >= 0.92:
             break
 
     print("")
@@ -236,6 +259,11 @@ def test():
     nb_eval_steps = 0
     pred_y = []
     confusion_matrix = torch.zeros(nb_classes, nb_classes)
+
+    if use_train == 'no':
+        checkpoint = torch.load('./checkpoint/nsmc/state_dict_epoch.pickle')
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     test_dataset = NSMCDataset("./data/ratings_train.txt", 'train')
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
@@ -271,6 +299,12 @@ def test():
 
 
 def leaderboard_test():
+
+    if use_train == 'no':
+        checkpoint = torch.load('./checkpoint/nsmc/state_dict_epoch.pickle')
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
     test_dataset = NSMCDataset("./data/data.csv", 'test')
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
@@ -301,10 +335,13 @@ def leaderboard_test():
     total_pred = torch.cat(pred_y, dim=0).cpu().numpy()
     x_df = pd.DataFrame({'Id': range(0, len(total_pred)), 'Predicted': total_pred})
 
-    x_df.to_csv('./sample123.csv', index=False)
+    x_df.to_csv('./result/nsmc/sample.csv', index=False)
 
 
 if __name__ == "__main__":
-    train()
-    test()
-    leaderboard_test()
+    if use_train == 'yes':
+        train()
+    if use_test == 'yes':
+        test()
+    if use_leader_test == 'yes':
+        leaderboard_test()
