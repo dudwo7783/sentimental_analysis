@@ -80,4 +80,8 @@ https://medium.com/@aniruddha.choudhury94/part-2-bert-fine-tuning-tutorial-with-
 
 ## 기타
 
+Data Augumentaion을 위한 코드는 개인적으로 google cloud api를 결제하여 사용하였습니다.
+해당 코드를 이용하고자하면 Google API Credential을 발급받아 코드안에서 수정바랍니다.
+
+
 Input으로 Bert WordEmbedding, 분류 모델로 TCN을 이용한 sample 코드를 추가하였습니다.
